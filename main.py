@@ -37,17 +37,17 @@ def chrf_compare(prediction: str, reference: str) -> float:
 
 if __name__ == '__main__':
 
-    text_for_translate = get_text_from_file("/home/user/Desktop/Texts_compares/source_en.txt")
+    text_for_translate = get_text_from_file("/home/user/Desktop/Texts_compares/source_en.txt")  # YOUR PATH ЗДЕСЬ ЛЕЖИТ ТЕКСТ
     session = Translator()
     api_translated_text = session.get_text_translate(
         from_lang='en_US',
         to_lang="ru_RU",
         data=text_for_translate
-    )
+    )   # REFERENCE TEXT
 
-    text_prediction_ru = get_text_from_file("/home/user/Desktop/Texts_compares/prediction_ru.txt")
+    text_prediction_ru = get_text_from_file("/home/user/Desktop/Texts_compares/prediction_ru.txt")  # ЗДЕСЬ ЛЕЖИТ ПРЕДИКШН
     # Save in file (uncomment if you need)
-    # save_text_to_file(path_to_file: str, translated_text)
+    # save_text_to_file(path_to_file: str, translated_text) СЮДА ПАСС КУДА СОХРАНЯТЬ
 
     for line_preds, line_reference in zip(text_prediction_ru.split("\n"), api_translated_text.split("\n")):
 
