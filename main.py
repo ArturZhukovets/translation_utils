@@ -1,7 +1,12 @@
+import logging
+import csv
 from translator_api import Translator
-from torchmetrics.functional import bleu_score
-from torchmetrics.functional import chrf_score
+from metrics_service import MetricComparator, bert_counter
 from dotenv import load_dotenv
+
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 load_dotenv()
 
@@ -25,16 +30,6 @@ def save_text_to_file(path_to_file: str, text: str) -> None:
         raise OSError("Error while writing to file")
 
 
-def bleu_compare(prediction: str, reference: str, n_gram: int = 4) -> float:
-    """Counts the bleu score by line"""
-    return round(float(bleu_score(prediction.lower(), [reference.lower()], n_gram=n_gram)), 3)
-
-
-def chrf_compare(prediction: str, reference: str) -> float:
-    """Counts the CHRF++ score by line"""
-    return round(float(chrf_score(prediction, [reference])), 3)
-
-
 if __name__ == '__main__':
 
     text_for_translate = get_text_from_file("/home/user/Desktop/Texts_compares/source_en.txt")
@@ -49,23 +44,38 @@ if __name__ == '__main__':
     # Save in file (uncomment if you need)
     # save_text_to_file(path_to_file: str, translated_text)
 
-    for line_preds, line_reference in zip(text_prediction_ru.split("\n"), api_translated_text.split("\n")):
+    with open("metrics.csv", 'w', encoding="utf-8") as f_o:
+        writer = csv.writer(f_o)
+        writer.writerow([
+            "sent_prediction",
+            "sent_reference",
+            "chrf",
+            "bleu",
+            "cer(The lower the value then better)",
+            "hlepor"
+        ])
+        for line_preds, line_reference in zip(text_prediction_ru.split("\n"), api_translated_text.split("\n")):
 
-        chrf = chrf_compare(line_preds, line_reference)
+            comparator = MetricComparator(preds=line_preds, target=line_reference)
+            chrf = comparator.chrf_compare()
+            bleu = comparator.bleu_compare()
+            cer = comparator.char_error_rate_compare()
+            hlepor = comparator.hlepor_score_compare()
 
-        if len(line_preds.split()) == 1:
-            bleu = bleu_compare(line_preds, line_reference, n_gram=1)
-        elif len(line_preds.split()) <= 6:
-            bleu = bleu_compare(line_preds, line_reference, n_gram=2)
-        else:
-            bleu = bleu_compare(line_preds, line_reference, n_gram=4)
+            writer.writerow([line_preds, line_reference, chrf, bleu, cer, hlepor])
 
-        print("#" * 20)
-        print(line_preds + "   ->   " + line_reference)
-        print(f"bleu - {bleu}")
-        print(f"CHRF++ - {chrf}")
-        print("#" * 20)
-        print()
+            logging.info("#" * 20)
+            logging.info(line_preds + "   ->   " + line_reference)
+            logging.info(f"bleu - {bleu}")
+            logging.info(f"CHRF++ - {chrf}")
+            logging.info(f"CER - {cer}")
+            logging.info(f"hLEPOR - {hlepor}")
+            logging.info("#" * 20)
+            logging.info("\n")
 
-
-
+    """
+    Здесь bert на CPU будет долго процессить. Можете теста ради запустить,
+    но на небольшом количестве строк. Раскомментировать строки ниже
+    """
+    # bert_scores = bert_counter(preds=text_prediction_ru.split("\n"), target=api_translated_text.split("\n"))
+    # logging.info(bert_scores)

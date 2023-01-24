@@ -5,8 +5,13 @@ name = "pypi"
 
 [packages]
 requests = "*"
-torchmetrics = "*"
 python-dotenv = "*"
+torchmetrics = {extras = ["text"], version = "*"}
+transformers = "*"
+hlepor = "*"
+nptyping = "*"
+evaluate = "*"
+bert-score = "*"
 
 [dev-packages]
 
